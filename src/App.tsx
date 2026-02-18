@@ -2,6 +2,9 @@
 // App.tsx (1/4) — Imports + types + helpers + storage (unified)
 // -------------------------------------------------------------------
 
+import Auth from "./Auth";
+import { supabase } from "./lib/supabaseClient";
+import { useEffect, useState } from "react";
 import React, { useEffect, useMemo, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -871,6 +874,23 @@ const MAX_PER_DAY = 5000;
 const MAX_PER_MONTH = 50000;
 
 export default function App() {
+
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(!!data.session);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session);
+    });
+
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
   const [companies, setCompanies] = useState<Company[]>(() => readLS<Company[]>(LS_KEYS.COMPANIES, []));
   const [customers, setCustomers] = useState<Customer[]>(() => readLS<Customer[]>(LS_KEYS.CUSTOMERS, []));
   const [categories, setCategories] = useState<Categories>(() => readLS<Categories>(LS_KEYS.CATEGORIES, { Produits: [] }));
