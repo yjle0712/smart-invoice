@@ -1,13 +1,72 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+/*
+ * Identité visuelle « Atlas » :
+ *  - vert d'encre profond (registres comptables, zellige de Fès) pour la structure ;
+ *  - safran pour les actions de mise en avant ;
+ *  - fond gris-vert frais, surfaces blanches, chiffres en tabulaire.
+ */
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", Arial, sans-serif;
+
+  --color-ink-50: #eef4f3;
+  --color-ink-100: #d6e4e2;
+  --color-ink-200: #aac8c4;
+  --color-ink-300: #78a59f;
+  --color-ink-400: #4b817b;
+  --color-ink-500: #2c6560;
+  --color-ink-600: #1e504c;
+  --color-ink-700: #17423f;
+  --color-ink-800: #123c3a;
+  --color-ink-900: #0c2928;
+
+  --color-saffron-50: #fdf6e7;
+  --color-saffron-100: #f9e7bf;
+  --color-saffron-400: #e0b04a;
+  --color-saffron-500: #d39b2a;
+  --color-saffron-600: #b07d1a;
+  --color-saffron-700: #8a6013;
+
+  --color-canvas: #f1f4f3;
+  --color-line: #dde4e2;
+  --color-muted: #5b6b69;
+  --color-text: #17201f;
+  --color-danger: #b4372f;
+  --color-success: #2f7d4f;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas text-text font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-saffron-500);
+    outline-offset: 2px;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Motif zellige (étoile à huit branches), utilisé uniquement dans la marque. */
+.zellige {
+  background-color: var(--color-ink-800);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23d39b2a' stroke-opacity='.22' stroke-width='1.2'%3E%3Cpath d='M28 8l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Cpath d='M14 14h28v28H14z' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
 }
