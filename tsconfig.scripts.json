@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": { "types": ["node"], "tsBuildInfoFile": null },
+  "include": ["scripts", "src"]
+}
