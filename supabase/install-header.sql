@@ -18,6 +18,7 @@ drop policy if exists assets_delete on storage.objects;
 
 drop view if exists public.vat_journal cascade;
 drop table if exists
+  public.quote_lines, public.quotes,
   public.delivery_note_lines, public.delivery_notes, public.delivery_note_counters,
   public.vat_entries, public.pdf_imports,
   public.audit_log, public.payments, public.invoice_lines, public.invoices,
@@ -40,7 +41,7 @@ begin
       'on_company_created','on_payment','recompute_invoice','save_invoice_draft','set_default_series',
       'touch_updated_at','track_product_price','validate_invoice',
       'vat_entry_before','vat_declaration','vat_dashboard',
-      'guard_delivery_note','create_note_from_invoice','copy_master_data','check_party_series'])
+      'guard_delivery_note','create_note_from_invoice','copy_master_data','check_party_series','guard_quote','save_quote','convert_quote_to_invoice'])
   loop
     execute format('drop function if exists %s cascade', r.sig);
   end loop;

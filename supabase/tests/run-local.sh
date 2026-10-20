@@ -12,3 +12,4 @@ $PSQL -d si_test -o /dev/null -f tests/03_bons.sql
 $PSQL -d si_test -o /dev/null -f tests/04_partage.sql
 $PSQL -d si_test -o /dev/null -f tests/05_paiement.sql
 $PSQL -d si_test -o /dev/null -f tests/06_numerotation_client.sql
+$PSQL -d si_test -o /dev/null -f tests/07_devis.sql

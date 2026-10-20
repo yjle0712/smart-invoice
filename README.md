@@ -53,7 +53,10 @@ personnalisables, facturation par lots à partir de commandes réelles, exports 
 - **Clients, fournisseurs et produits communs à plusieurs entreprises** : case « Ajouter aussi dans mes autres entreprises » à la création, bouton « Reprendre d'une autre entreprise », reprise à la création d'une entreprise, et synchronisation de toutes les entreprises (page Entreprises). Sans doublon (même ICE / nom / référence). Mise à jour d'une base existante : `supabase/MISE_A_JOUR_partage_entreprises.sql`.
 - **Modèles FERCIM MAT, NOVASTRO BUSINESS et NORD BUSINESS JLE** (reproduits depuis les modèles Excel) et **mode de paiement** sur la facture (virement, chèque, espèces, effet, carte…). Mise à jour : `supabase/MISE_A_JOUR_17-10-2026.sql`.
 - **Numérotation propre à chaque client** : dans la fiche client, choisir une série ou saisir le dernier numéro du client (ex. MATA0012/2026) ou ses lettres (ex. MATA) ; ses factures prennent automatiquement cette série.
-- Mise à jour d'une base existante (tout en un) : `supabase/MISE_A_JOUR_18-10-2026.sql`.
+- **Importation Excel** (Journal TVA) : reprise des factures déjà émises sur Excel (un fichier par facture ou une liste), avec leurs numéros d'origine, puis « Continuer votre numérotation » à partir du dernier numéro trouvé.
+- **Devis** : numérotation DV0001/2026, mêmes modèles que les factures (titre DEVIS, date de validité), suivi (envoyé, accepté, refusé) et « Transformer en facture » (facture brouillon avec les mêmes lignes).
+- **Application installable** (PWA) : bouton « Installer l'application » (ordinateur, Android) ; sur iPhone : Partager → Sur l'écran d'accueil.
+- Mise à jour d'une base existante (tout en un) : `supabase/MISE_A_JOUR_20-10-2026.sql`.
 - **Section « Bons BL / BC »** : sur la fiche d'une facture, les boutons « Créer le BL » et « Créer le BC » créent en un clic
   le bon de livraison ou le bon de commande (même client, mêmes lignes, même modèle graphique) avec sa propre numérotation
   `BL0001/2026`, `BC0001/2026`. Le BL est imprimé sans prix par défaut, avec cases de signature (livreur / client) ;
