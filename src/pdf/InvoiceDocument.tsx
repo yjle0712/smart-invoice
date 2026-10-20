@@ -45,11 +45,12 @@ export interface InvoicePdfData {
   totals: { total_ht: number; total_vat: number; total_ttc: number; vat_breakdown: VatBreakdownRow[] };
   template: { base: TemplateBase; settings?: Partial<TemplateSettings> | null };
   /** Bon de livraison / bon de commande imprimé avec le même modèle que les factures. */
-  doc?: { kind: "BL" | "BC"; showPrices: boolean; invoiceNumber: string | null };
+  doc?: { kind: "BL" | "BC" | "DV"; showPrices: boolean; invoiceNumber: string | null; validUntil?: string | null };
 }
 
-export const DOC_TITLE = { BL: "BON DE LIVRAISON", BC: "BON DE COMMANDE" } as const;
-const DOC_LABEL = { BL: "Bon de livraison", BC: "Bon de commande" } as const;
+export const DOC_TITLE = { BL: "BON DE LIVRAISON", BC: "BON DE COMMANDE", DV: "DEVIS" } as const;
+const DOC_LABEL = { BL: "Bon de livraison", BC: "Bon de commande", DV: "Devis" } as const;
+const DOC_ARRETE = { BL: "Arrêté le présent bon de livraison", BC: "Arrêté le présent bon de commande", DV: "Arrêté le présent devis" } as const;
 
 export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
   return (
@@ -238,11 +239,13 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
 
   const meta: [string, string][] = [];
   if (doc?.invoiceNumber) meta.push(["Facture", doc.invoiceNumber]);
+  if (doc?.validUntil) meta.push(["Valable jusqu'au", formatDateFr(doc.validUntil)]);
+  const payOk = !doc || doc.kind === "DV";
   if (!doc && s.showDueDate && data.invoice.due_date) meta.push(["Échéance", formatDateFr(data.invoice.due_date)]);
   if (data.invoice.order_ref) meta.push(["Commande", data.invoice.order_ref]);
   if (!doc && s.showDeliveryNote && data.invoice.delivery_note_ref) meta.push(["Bon de livr.", data.invoice.delivery_note_ref]);
-  if (!doc && s.showPaymentMethod && data.invoice.payment_method) meta.push(["Mode de paiement", PAYMENT_METHOD_PDF[data.invoice.payment_method] ?? data.invoice.payment_method]);
-  if (!doc && s.showPaymentTerms && data.invoice.payment_terms) meta.push(["Conditions", data.invoice.payment_terms]);
+  if (payOk && s.showPaymentMethod && data.invoice.payment_method) meta.push(["Mode de paiement", PAYMENT_METHOD_PDF[data.invoice.payment_method] ?? data.invoice.payment_method]);
+  if (payOk && s.showPaymentTerms && data.invoice.payment_terms) meta.push(["Conditions", data.invoice.payment_terms]);
   if (!doc && s.showGoodsNature && data.invoice.goods_nature) meta.push(["Nature", data.invoice.goods_nature]);
 
   const boxStyle: Style = look.header === "boxed" || look.totals === "box"
@@ -265,7 +268,7 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
     <View style={[{ flex: 1 }, boxStyle, style ?? {}]}>
       {meta.map(([k, v]) => (
         <View key={k} style={{ flexDirection: "row" }}>
-          <Text style={[st.muted, { width: 22 * MM }]}>{k}</Text>
+          <Text style={[st.muted, { width: 27 * MM }]}>{k}</Text>
           <Text style={{ flex: 1 }}>{v}</Text>
         </View>
       ))}
@@ -305,7 +308,7 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
   );
 
   if (look.header === "titlebox") {
-    const rowsInBox: [string, string][] = [["N° de facture", numberText], ["Date", dateText], ...meta];
+    const rowsInBox: [string, string][] = [[doc ? "N°" : "N° de facture", numberText], ["Date", dateText], ...meta];
     header = (
       <View style={{ marginBottom: 5 * MM }}>
         <View style={{ flexDirection: "row", gap: 6 * MM, alignItems: "flex-start" }}>
@@ -374,7 +377,7 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
     parties = (
       <View wrap={false} style={{ flexDirection: "row", marginBottom: 5 * MM }}>
         {gridTable("Client", clientRows)}
-        {gridTable(doc ? DOC_LABEL[doc.kind] : "Facture", [["N° de facture", numberText], ["Date", dateText], ...meta])}
+        {gridTable(doc ? DOC_LABEL[doc.kind] : "Facture", [[doc ? "N°" : "N° de facture", numberText], ["Date", dateText], ...meta])}
       </View>
     );
   } else if (look.partiesStyle === "cards") {
@@ -392,7 +395,7 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
         </View>
         <View style={{ flex: 1 }}>
           {label(doc ? "Informations" : "Informations facture", { color: "#4a4f57", marginBottom: 1 })}
-          {[["N° de facture", numberText] as [string, string], ["Date", dateText] as [string, string], ...meta].map((r, i) => cardRow(r, i === 0))}
+          {[[doc ? "N°" : "N° de facture", numberText] as [string, string], ["Date", dateText] as [string, string], ...meta].map((r, i) => cardRow(r, i === 0))}
         </View>
       </View>
     );
@@ -494,10 +497,10 @@ export function InvoicePage({ data }: { data: InvoicePdfData }) {
 
   const words = arreteWords();
   function arreteWords() {
-    return doc ? `${doc.kind === "BL" ? "ARRÊTÉ LE PRÉSENT BON DE LIVRAISON" : "ARRÊTÉ LE PRÉSENT BON DE COMMANDE"} À LA SOMME DE : ${amountToFrenchWords(data.totals.total_ttc)}` : arreteSentence(data.totals.total_ttc);
+    return doc ? `${DOC_ARRETE[doc.kind].toUpperCase()} À LA SOMME DE : ${amountToFrenchWords(data.totals.total_ttc)}` : arreteSentence(data.totals.total_ttc);
   }
   const wordsAmount = amountToFrenchWords(data.totals.total_ttc);
-  const wordsLabel = doc ? (doc.kind === "BL" ? "Arrêté le présent bon de livraison à la somme de :" : "Arrêté le présent bon de commande à la somme de :") : "Arrêtée la présente facture à la somme de :";
+  const wordsLabel = doc ? `${DOC_ARRETE[doc.kind]} à la somme de :` : "Arrêtée la présente facture à la somme de :";
   const vatLabel = vatRows.length === 1 ? `TVA ${formatRate(vatRows[0].vat_rate_bp)}` : "TVA";
   const stackTotals = (
     <View wrap={false} style={{ marginTop: 4 * MM, borderTopWidth: 1, borderTopColor: dark, paddingTop: 3 * MM, flexDirection: "row", gap: 6 * MM }}>

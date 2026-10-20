@@ -13,6 +13,9 @@ const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage").th
 const InvoicesListPage = lazy(() => import("@/features/invoices/InvoicesListPage").then((m) => ({ default: m.InvoicesListPage })));
 const InvoiceEditorPage = lazy(() => import("@/features/invoices/InvoiceEditorPage").then((m) => ({ default: m.InvoiceEditorPage })));
 const InvoiceDetailPage = lazy(() => import("@/features/invoices/InvoiceDetailPage").then((m) => ({ default: m.InvoiceDetailPage })));
+const QuotesListPage = lazy(() => import("@/features/quotes/QuotesPages").then((m) => ({ default: m.QuotesListPage })));
+const QuoteEditorPage = lazy(() => import("@/features/quotes/QuotesPages").then((m) => ({ default: m.QuoteEditorPage })));
+const QuoteDetailPage = lazy(() => import("@/features/quotes/QuotesPages").then((m) => ({ default: m.QuoteDetailPage })));
 const BatchPage = lazy(() => import("@/features/batch/BatchPage").then((m) => ({ default: m.BatchPage })));
 const PartiesPage = lazy(() => import("@/features/parties/PartiesPage").then((m) => ({ default: m.PartiesPage })));
 const ProductsPage = lazy(() => import("@/features/products/ProductsPage").then((m) => ({ default: m.ProductsPage })));
@@ -20,6 +23,7 @@ const TemplatesPage = lazy(() => import("@/features/templates/TemplatesPage").th
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const UsersPage = lazy(() => import("@/features/users/UsersPage").then((m) => ({ default: m.UsersPage })));
 const ImportPage = lazy(() => import("@/features/vat/ImportPage").then((m) => ({ default: m.ImportPage })));
+const ImportExcelPage = lazy(() => import("@/features/vat/ImportExcelPage").then((m) => ({ default: m.ImportExcelPage })));
 const ReviewPage = lazy(() => import("@/features/vat/ReviewPage").then((m) => ({ default: m.ReviewPage })));
 const JournalPage = lazy(() => import("@/features/vat/JournalPage").then((m) => ({ default: m.JournalPage })));
 const DeclarationPage = lazy(() => import("@/features/vat/DeclarationPage").then((m) => ({ default: m.DeclarationPage })));
@@ -65,10 +69,15 @@ export function App() {
                   <Route path="factures/nouvelle" element={<InvoiceEditorPage />} />
                   <Route path="factures/:id" element={<InvoiceDetailPage />} />
                   <Route path="factures/:id/modifier" element={<InvoiceEditorPage />} />
+                  <Route path="devis" element={<QuotesListPage />} />
+                  <Route path="devis/nouveau" element={<QuoteEditorPage key="new" />} />
+                  <Route path="devis/:id" element={<QuoteDetailPage />} />
+                  <Route path="devis/:id/modifier" element={<QuoteEditorPage key="edit" />} />
                   <Route path="bons" element={<NotesListPage />} />
                   <Route path="bons/:id" element={<NoteDetailPage />} />
                   <Route path="lots" element={<BatchPage />} />
                   <Route path="tva/import" element={<ImportPage />} />
+                  <Route path="tva/import-excel" element={<ImportExcelPage />} />
                   <Route path="tva/controle" element={<ReviewPage />} />
                   <Route path="tva/ventes" element={<JournalPage key="sale" kind="sale" />} />
                   <Route path="tva/achats" element={<JournalPage key="purchase" kind="purchase" />} />

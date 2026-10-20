@@ -427,3 +427,42 @@ export interface DeliveryNoteLine {
   discount_bp: number;
   total_ttc: number;
 }
+
+/** Devis. */
+export type QuoteStatus = "draft" | "sent" | "accepted" | "refused" | "invoiced";
+export interface Quote {
+  id: string;
+  company_id: string;
+  number: string;
+  seq: number;
+  status: QuoteStatus;
+  issue_date: string;
+  valid_until: string | null;
+  client_id: string | null;
+  client_snapshot: PartySnapshot | null;
+  payment_terms: string | null;
+  payment_method: string | null;
+  notes: string | null;
+  template_id: string | null;
+  total_ht: number;
+  total_vat: number;
+  total_ttc: number;
+  vat_breakdown: VatBreakdownRow[];
+  invoice_id: string | null;
+  is_demo: boolean;
+  created_at: string;
+}
+export interface QuoteLine {
+  id: string;
+  quote_id: string;
+  position: number;
+  product_id: string | null;
+  designation: string;
+  unit: string | null;
+  quantity: number;
+  unit_price_ttc: number;
+  vat_rate_bp: number;
+  discount_bp: number;
+  total_ttc: number;
+  total_ht: number;
+}

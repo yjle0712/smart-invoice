@@ -72,3 +72,14 @@ export const xlDate = (iso: string | null | undefined) => {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
   return new Date(y, m - 1, d);
 };
+
+/** Toutes les cellules d'une feuille (lignes vides conservées pour garder les positions). */
+export async function readSheetGrids(file: File): Promise<{ name: string; grid: unknown[][] }[]> {
+  const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  // Les modèles de facture ont souvent une feuille « Facture » suivie de feuilles d'aide : on la met en premier.
+  const names = [...wb.SheetNames].sort((a, b) => Number(/factur/i.test(b)) - Number(/factur/i.test(a)));
+  return names.map((name) => ({
+    name,
+    grid: XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, raw: true, defval: null, blankrows: true }),
+  }));
+}

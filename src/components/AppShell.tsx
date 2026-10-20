@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  Building2, Calculator, ClipboardList, ClipboardCheck, FilePlus2, FileStack, FileText, FileUp, History, LayoutDashboard, LogOut, Menu, Package,
+  Building2, Calculator, ClipboardList, FileSignature, FileSpreadsheet, ClipboardCheck, FilePlus2, FileStack, FileText, FileUp, History, LayoutDashboard, LogOut, Menu, Package,
   Palette, Receipt, Settings, ShoppingCart, Truck, Users, UserCog, X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { InstallAppButton } from "./InstallApp";
 import { useCompany, useSession } from "@/lib/session";
 import { cn, ROLE_LABEL } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const NAV: { group: string | null; items: NavItem[] }[] = [
     items: [
       { to: "/factures", label: "Factures", icon: <FileText /> },
       { to: "/factures/nouvelle", label: "Nouvelle facture", icon: <FilePlus2 /> },
+      { to: "/devis", label: "Devis", icon: <FileSignature /> },
       { to: "/bons", label: "Bons BL / BC", icon: <ClipboardList /> },
       { to: "/lots", label: "Facturation par lots", icon: <FileStack /> },
     ],
@@ -24,6 +26,7 @@ const NAV: { group: string | null; items: NavItem[] }[] = [
     group: "Journal TVA",
     items: [
       { to: "/tva/import", label: "Importation PDF", icon: <FileUp /> },
+      { to: "/tva/import-excel", label: "Importation Excel", icon: <FileSpreadsheet /> },
       { to: "/tva/controle", label: "Contrôle des factures", icon: <ClipboardCheck /> },
       { to: "/tva/ventes", label: "Journal des ventes", icon: <Receipt /> },
       { to: "/tva/achats", label: "Journal des achats", icon: <ShoppingCart /> },
@@ -113,6 +116,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="border-t border-ink-700 px-3 py-3 text-xs">
         <div className="truncate text-ink-200" title={session?.user.email}>{session?.user.email}</div>
+        <InstallAppButton />
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}

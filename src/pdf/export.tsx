@@ -2,7 +2,7 @@ import { pdf } from "@react-pdf/renderer";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { supabase, must, storageToDataUrl } from "../lib/supabase";
-import type { Company, DeliveryNote, DeliveryNoteLine, Invoice, InvoiceLine, InvoiceTemplateRow, Party, PartySnapshot } from "../lib/types";
+import type { Company, DeliveryNote, DeliveryNoteLine, Invoice, Quote, QuoteLine, InvoiceLine, InvoiceTemplateRow, Party, PartySnapshot } from "../lib/types";
 import { safeFileName } from "../lib/utils";
 import { InvoiceDocument, type InvoicePdfData } from "./InvoiceDocument";
 
@@ -100,6 +100,29 @@ export async function buildNotePdfData(
     totals: { total_ht: note.total_ht, total_vat: note.total_vat, total_ttc: note.total_ttc, vat_breakdown: note.vat_breakdown },
     template: { base: template?.base ?? "classic", settings: template?.settings ?? null },
     doc: { kind: note.kind, showPrices: note.show_prices, invoiceNumber: note.invoice_number },
+  };
+}
+
+/** Données PDF d'un devis (même modèle que les factures, titre « DEVIS »). */
+export async function buildQuotePdfData(q: Quote, lines: QuoteLine[], company: Company, template: InvoiceTemplateRow | null): Promise<InvoicePdfData> {
+  const [logo, background] = await Promise.all([
+    cachedImage(company.logo_path),
+    template?.base === "entete" ? cachedImage(template.background_path) : Promise.resolve(null),
+  ]);
+  return {
+    company, logo, background,
+    invoice: {
+      number: q.number, status: "validated", issue_date: q.issue_date, due_date: null, order_ref: null, delivery_note_ref: null,
+      payment_terms: q.payment_terms, payment_method: q.payment_method, goods_nature: null, notes: q.notes, is_demo: q.is_demo || company.is_demo,
+    },
+    client: q.client_snapshot ?? partyToSnapshot(null),
+    lines: [...lines].sort((a, b) => a.position - b.position).map((l) => ({
+      designation: l.designation, unit: l.unit, quantity: Number(l.quantity), unit_price_ttc: l.unit_price_ttc,
+      discount_bp: l.discount_bp, total_ttc: l.total_ttc, vat_rate_bp: l.vat_rate_bp,
+    })),
+    totals: { total_ht: q.total_ht, total_vat: q.total_vat, total_ttc: q.total_ttc, vat_breakdown: q.vat_breakdown },
+    template: { base: template?.base ?? "classic", settings: template?.settings ?? null },
+    doc: { kind: "DV", showPrices: true, invoiceNumber: null, validUntil: q.valid_until },
   };
 }
 
