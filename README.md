@@ -56,7 +56,7 @@ personnalisables, facturation par lots à partir de commandes réelles, exports 
 - **Importation Excel** (Journal TVA) : reprise des factures déjà émises sur Excel (un fichier par facture ou une liste), avec leurs numéros d'origine, puis « Continuer votre numérotation » à partir du dernier numéro trouvé.
 - **Devis** : numérotation DV0001/2026, mêmes modèles que les factures (titre DEVIS, date de validité), suivi (envoyé, accepté, refusé) et « Transformer en facture » (facture brouillon avec les mêmes lignes).
 - **Application installable** (PWA) : bouton « Installer l'application » (ordinateur, Android) ; sur iPhone : Partager → Sur l'écran d'accueil.
-- Mise à jour d'une base existante (tout en un) : `supabase/MISE_A_JOUR_20-10-2026.sql`.
+- Mise à jour d'une base existante (tout en un) : `supabase/MISE_A_JOUR_21-10-2026.sql`.
 - **Section « Bons BL / BC »** : sur la fiche d'une facture, les boutons « Créer le BL » et « Créer le BC » créent en un clic
   le bon de livraison ou le bon de commande (même client, mêmes lignes, même modèle graphique) avec sa propre numérotation
   `BL0001/2026`, `BC0001/2026`. Le BL est imprimé sans prix par défaut, avec cases de signature (livreur / client) ;

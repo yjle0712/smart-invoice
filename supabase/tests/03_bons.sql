@@ -27,7 +27,7 @@ select t.ok((select total_ttc from delivery_notes where id = current_setting('t.
 -- Modifications limitées
 update delivery_notes set notes = 'Livré au dépôt', show_prices = true where id = current_setting('t.bl')::uuid;
 select t.ok((select notes from delivery_notes where id = current_setting('t.bl')::uuid) = 'Livré au dépôt', 'observations modifiables');
-select t.fails($$update delivery_notes set number = 'BL9999/2027' where id = current_setting('t.bl')::uuid$$, 'modifiables', 'numéro non modifiable');
+select t.fails($$update delivery_notes set total_ttc = 1 where id = current_setting('t.bl')::uuid$$, 'modifiables', 'montants non modifiables');
 select t.fails($$insert into delivery_notes (company_id, kind, number, seq) values (current_setting('t.a')::uuid, 'BL', 'BLX', 1)$$, 'row-level security', 'création directe interdite');
 
 -- Suppression : utilisateur non, administrateur oui
