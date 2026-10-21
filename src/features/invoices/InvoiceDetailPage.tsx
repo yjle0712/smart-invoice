@@ -191,7 +191,7 @@ export function InvoiceDetailPage() {
               <dt className="text-muted">Client</dt><dd>{clientName || "—"}</dd>
               <dt className="text-muted">ICE client</dt><dd className="num">{inv.client_snapshot?.ice ?? client?.ice ?? "—"}</dd>
               <dt className="text-muted">Échéance</dt><dd>{formatDateFr(inv.due_date) || "—"}</dd>
-              <dt className="text-muted">Paiement</dt><dd>{inv.payment_method ? PAYMENT_METHOD_PDF[inv.payment_method] ?? inv.payment_method : "—"}</dd>
+              <dt className="text-muted">Règlement</dt><dd>{inv.payment_method ? PAYMENT_METHOD_PDF[inv.payment_method] ?? inv.payment_method : "—"}</dd>
               <dt className="text-muted">Commande</dt><dd>{inv.order_ref ?? "—"}</dd>
               <dt className="text-muted">Bon de livraison</dt><dd>{inv.delivery_note_ref ?? "—"}</dd>
               <dt className="text-muted">Nature</dt><dd>{inv.goods_nature ?? "—"}</dd>

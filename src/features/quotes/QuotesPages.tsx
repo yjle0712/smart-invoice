@@ -213,7 +213,7 @@ export function QuoteEditorPage() {
               <Field label="Modèle"><Select value={templateId} onChange={(e) => setTemplateId(e.target.value)}><option value="">Modèle par défaut</option>{templates.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</Select></Field>
               <Field label="Date du devis"><Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} /></Field>
               <Field label="Valable jusqu'au"><Input type="date" value={validUntil} min={issueDate} onChange={(e) => setValidUntil(e.target.value)} /></Field>
-              <Field label="Mode de paiement">
+              <Field label="Mode de règlement">
                 <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="">— Non précisé —</option>
                   {Object.entries(PAYMENT_METHOD_PDF).map(([v, l]) => <option key={v} value={v}>{l}</option>)}

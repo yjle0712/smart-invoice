@@ -233,7 +233,7 @@ const TOGGLES: [keyof TemplateSettings, string][] = [
   ["showCompanyIds", "Identifiants (ICE, IF, RC, TP) en en-tête"],
   ["showClientAddress", "Adresse du client"],
   ["showDueDate", "Date d'échéance"],
-  ["showPaymentMethod", "Mode de paiement"],
+  ["showPaymentMethod", "Mode de règlement"],
   ["showPaymentTerms", "Conditions de paiement"],
   ["showGoodsNature", "Nature de la marchandise"],
   ["showDeliveryNote", "N° de bon de livraison"],

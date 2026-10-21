@@ -216,3 +216,67 @@ export async function downloadInvoicesSinglePdf(
   saveAs(new Blob([bytes as BlobPart], { type: "application/pdf" }), `${safeFileName("Factures", company.legal_name)}.pdf`);
   return done;
 }
+
+/**
+ * Télécharge plusieurs bons (BL / BC) : un ZIP (un PDF par bon) ou un seul PDF qui les regroupe.
+ * Chaque bon utilise le modèle de sa facture (sinon le modèle par défaut de l'entreprise).
+ */
+export async function downloadNotes(
+  company: Company,
+  noteIds: string[],
+  mode: "zip" | "pdf",
+  onProgress?: (done: number, total: number) => void,
+): Promise<number> {
+  const notes: DeliveryNote[] = [];
+  const lines: DeliveryNoteLine[] = [];
+  for (let i = 0; i < noteIds.length; i += 200) {
+    const chunk = noteIds.slice(i, i + 200);
+    notes.push(...(must(await supabase.from("delivery_notes").select("*").in("id", chunk)) as DeliveryNote[]));
+    lines.push(...(must(await supabase.from("delivery_note_lines").select("*").in("note_id", chunk)) as DeliveryNoteLine[]));
+  }
+  const invIds = [...new Set(notes.map((n) => n.invoice_id).filter(Boolean))] as string[];
+  const invTpl = new Map<string, string | null>();
+  for (let i = 0; i < invIds.length; i += 200) {
+    const rows = must(await supabase.from("invoices").select("id, template_id").in("id", invIds.slice(i, i + 200))) as { id: string; template_id: string | null }[];
+    rows.forEach((r) => invTpl.set(r.id, r.template_id));
+  }
+  const templates = must(await supabase.from("invoice_templates").select("*").eq("company_id", company.id)) as InvoiceTemplateRow[];
+  const tplById = new Map(templates.map((t) => [t.id, t]));
+  const order = new Map(noteIds.map((id, i) => [id, i]));
+  notes.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+
+  const zip = new JSZip();
+  const { PDFDocument } = await import("pdf-lib");
+  const merged = mode === "pdf" ? await PDFDocument.create() : null;
+  const errors: string[] = [];
+  let done = 0;
+  for (const n of notes) {
+    try {
+      const tid = (n.invoice_id ? invTpl.get(n.invoice_id) : null) ?? company.default_template_id;
+      const data = await buildNotePdfData(n, lines.filter((l) => l.note_id === n.id), company, (tid && tplById.get(tid)) || null);
+      const blob = await renderPdfBlob(data);
+      if (merged) {
+        const src = await PDFDocument.load(await blob.arrayBuffer());
+        (await merged.copyPages(src, src.getPageIndices())).forEach((p) => merged.addPage(p));
+      } else {
+        zip.file(noteFileName(n), blob);
+      }
+    } catch (e) {
+      errors.push(`${n.number} : ${(e as Error).message}`);
+    }
+    done++;
+    onProgress?.(done, notes.length);
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  const count = notes.length - errors.length;
+  if (count === 0) throw new Error("Aucun PDF n'a pu être généré. " + errors.join(" ; "));
+  const label = notes.every((n) => n.kind === "BL") ? "Bons-de-livraison" : notes.every((n) => n.kind === "BC") ? "Bons-de-commande" : "Bons";
+  if (merged) {
+    const bytes = await merged.save();
+    saveAs(new Blob([bytes as BlobPart], { type: "application/pdf" }), `${safeFileName(label, company.legal_name)}.pdf`);
+  } else {
+    if (errors.length) zip.file("ERREURS.txt", errors.join("\n"));
+    saveAs(await zip.generateAsync({ type: "blob", compression: "DEFLATE" }), `${safeFileName(label, company.legal_name)}.zip`);
+  }
+  return count;
+}

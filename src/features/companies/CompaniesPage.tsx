@@ -8,6 +8,7 @@ import { ROLE_LABEL, cn } from "@/lib/utils";
 import { Badge, Button, Card, ConfirmDialog, PageHeader } from "@/components/ui";
 import { CompanyForm } from "./CompanyForm";
 import { SyncAllButton, copyMasterData } from "./sharing";
+import { CompanyTemplatePicker } from "./CompanyTemplatePicker";
 
 export function CompaniesPage() {
   const { companies, company: active, select, reload } = useCompany();
@@ -93,6 +94,9 @@ export function CompaniesPage() {
                   </select>
                 </label>
               </div>
+            )}
+            {current && (
+              <CompanyTemplatePicker companyId={current.id} defaultTemplateId={current.default_template_id} canEdit={current.role === "admin"} onChanged={reload} />
             )}
             {editing === "new" || current ? (
               <CompanyForm

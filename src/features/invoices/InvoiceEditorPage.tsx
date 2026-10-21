@@ -330,7 +330,7 @@ export function InvoiceEditorPage() {
                   {series.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.format})</option>)}
                 </Select>
               </Field>
-              <Field label="Mode de paiement">
+              <Field label="Mode de règlement" hint="Virement, chèque, espèces… imprimé sur la facture.">
                 <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="">— Non précisé —</option>
                   {Object.entries(PAYMENT_METHOD_PDF).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -345,7 +345,7 @@ export function InvoiceEditorPage() {
               <Field label="Référence de commande" hint="Une commande ne peut être facturée qu'une fois.">
                 <Input value={orderRef} onChange={(e) => setOrderRef(e.target.value)} />
               </Field>
-              <Field label="N° Bon de livraison" hint="Un ou plusieurs numéros, ex. BL-0125, BL-0126">
+              <Field label="N° Bon de livraison" hint="Saisi à la main (ex. BL-0125). Le BL créé depuis cette facture prendra ce numéro ; vide = numéro automatique.">
                 <Input value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} placeholder="BL-…" />
               </Field>
               <Field label="Observations" className="sm:col-span-2">

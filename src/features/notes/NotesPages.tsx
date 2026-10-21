@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { saveAs } from "file-saver";
-import { ArrowLeft, Download, FileText, ImageDown, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, FileArchive, FileText, ImageDown, Search, Trash2 } from "lucide-react";
 import { supabase, must, errorMessage } from "@/lib/supabase";
 import { useActiveCompany } from "@/lib/session";
 import { useAsync, useDebounced } from "@/lib/hooks";
 import type { DeliveryNote, DeliveryNoteLine, InvoiceTemplateRow, NoteKind } from "@/lib/types";
 import { formatMoney, formatQuantity } from "@/domain/money";
 import { formatDateFr } from "@/domain/dates";
-import { buildNotePdfData, noteFileName, renderPdfBlob } from "@/pdf/export";
+import { buildNotePdfData, downloadNotes, noteFileName, renderPdfBlob } from "@/pdf/export";
 import { PdfPreview } from "@/pdf/PdfPreview";
 import {
   Badge, Button, Card, Checkbox, ConfirmDialog, EmptyState, ErrorBox, Field, Input, PageHeader, Pagination, Spinner, Table, Textarea,
@@ -30,6 +30,29 @@ export function NotesListPage() {
   const query = useDebounced(q);
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [kind, query]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [progress, setProgress] = useState<string | null>(null);
+  useEffect(() => setSelected(new Set()), [kind, company.id]);
+
+  /** Tous les bons correspondant aux filtres (toutes pages). */
+  const allIds = async () => {
+    let req = supabase.from("delivery_notes").select("id").eq("company_id", company.id);
+    if (kind) req = req.eq("kind", kind);
+    if (query.trim()) {
+      const s = query.trim().replace(/[%,()]/g, " ");
+      req = req.or(`number.ilike.%${s}%,invoice_number.ilike.%${s}%,order_ref.ilike.%${s}%,client_snapshot->>name.ilike.%${s}%`);
+    }
+    return (must(await req.order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(2000)) as { id: string }[]).map((r) => r.id);
+  };
+  const runDownload = async (ids: string[] | "all", mode: "zip" | "pdf") => {
+    try {
+      setProgress("…");
+      const list = ids === "all" ? await allIds() : ids;
+      if (!list.length) { toast.error("Aucun bon à télécharger."); return; }
+      const n = await downloadNotes(company, list, mode, (d, t) => setProgress(`${d} / ${t}`));
+      toast.success(`${n} bon(s) téléchargé(s).`);
+    } catch (err) { toast.error(errorMessage(err)); } finally { setProgress(null); }
+  };
 
   const list = useAsync(async () => {
     let req = supabase.from("delivery_notes").select("*", { count: "exact" }).eq("company_id", company.id);
@@ -53,6 +76,8 @@ export function NotesListPage() {
     { k: "", label: "Tous" }, { k: "BL", label: "Bons de livraison" }, { k: "BC", label: "Bons de commande" },
   ];
   const rows = list.data?.rows ?? [];
+  const allOnPage = rows.length > 0 && rows.every((r) => selected.has(r.id));
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   return (
     <>
@@ -80,7 +105,20 @@ export function NotesListPage() {
             <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted" />
             <Input className="pl-8" placeholder="N° de bon, n° de facture, client, commande" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
+          <Button variant="secondary" icon={<Download className="size-4" />} disabled={progress !== null || !list.data?.total} onClick={() => runDownload("all", "zip")}>
+            Tout télécharger ({list.data?.total ?? 0})
+          </Button>
         </div>
+
+        {(selected.size > 0 || progress) && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-line bg-ink-50 px-3 py-2 text-sm">
+            {selected.size > 0 && <span className="font-medium">{selected.size} sélectionné(s)</span>}
+            <Button size="sm" variant="secondary" icon={<FileArchive className="size-3.5" />} disabled={progress !== null || !selected.size} onClick={() => runDownload([...selected], "zip")}>ZIP (un PDF par bon)</Button>
+            <Button size="sm" variant="secondary" disabled={progress !== null || !selected.size} onClick={() => runDownload([...selected], "pdf")}>Un seul PDF</Button>
+            {progress && <span className="num text-muted">Génération {progress}</span>}
+            {selected.size > 0 && <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Désélectionner</Button>}
+          </div>
+        )}
 
         {list.loading && !list.data ? <Spinner /> : list.error ? <ErrorBox message={list.error} onRetry={list.reload} /> :
           rows.length === 0 ? (
@@ -91,11 +129,18 @@ export function NotesListPage() {
             <>
               <Table>
                 <thead>
-                  <tr><th>N° du bon</th><th>Type</th><th>Date</th><th>Client</th><th>Facture</th><th className="text-right">Articles</th><th className="text-right">Total TTC</th></tr>
+                  <tr>
+                    <th className="w-8">
+                      <input type="checkbox" className="accent-ink-700" aria-label="Tout sélectionner" checked={allOnPage}
+                        onChange={() => setSelected((s) => { const n = new Set(s); rows.forEach((r) => (allOnPage ? n.delete(r.id) : n.add(r.id))); return n; })} />
+                    </th>
+                    <th>N° du bon</th><th>Type</th><th>Date</th><th>Client</th><th>Facture</th><th className="text-right">Articles</th><th className="text-right">Total TTC</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id}>
+                      <td><input type="checkbox" className="accent-ink-700" aria-label={`Sélectionner ${r.number}`} checked={selected.has(r.id)} onChange={() => toggle(r.id)} /></td>
                       <td><Link to={`/bons/${r.id}`} className="font-medium text-ink-800 hover:underline">{r.number}</Link></td>
                       <td><Badge tone={r.kind === "BL" ? "ok" : "neutral"}>{NOTE_LABEL[r.kind]}</Badge></td>
                       <td className="num">{formatDateFr(r.issue_date)}</td>
@@ -124,6 +169,7 @@ export function NoteDetailPage() {
   const { company, canManage } = useActiveCompany();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [notes, setNotes] = useState("");
+  const [number, setNumber] = useState("");
   const [date, setDate] = useState("");
   const [showPrices, setShowPrices] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -142,27 +188,27 @@ export function NoteDetailPage() {
   }, [id, company.id]);
 
   useEffect(() => {
-    if (q.data) { setNotes(q.data.note.notes ?? ""); setDate(q.data.note.issue_date); setShowPrices(q.data.note.show_prices); }
+    if (q.data) { setNotes(q.data.note.notes ?? ""); setNumber(q.data.note.number); setDate(q.data.note.issue_date); setShowPrices(q.data.note.show_prices); }
   }, [q.data]);
 
   // L'aperçu suit les réglages en direct (avant même l'enregistrement).
   const notesPreview = useDebounced(notes, 700);
   const pdf = useAsync(async () => {
     if (!q.data) return null;
-    const draft = { ...q.data.note, notes: notesPreview.trim() || null, issue_date: date || q.data.note.issue_date, show_prices: showPrices };
+    const draft = { ...q.data.note, number: number.trim() || q.data.note.number, notes: notesPreview.trim() || null, issue_date: date || q.data.note.issue_date, show_prices: showPrices };
     return buildNotePdfData(draft, q.data.lines, company, q.data.template);
-  }, [q.data, notesPreview, date, showPrices, company]);
+  }, [q.data, notesPreview, number, date, showPrices, company]);
   const pdfData = useMemo(() => pdf.data ?? null, [pdf.data]);
 
   if (q.loading && !q.data) return <Spinner />;
   if (q.error || !q.data) return <ErrorBox message={q.error ?? "Bon introuvable."} onRetry={q.reload} />;
   const { note, lines } = q.data;
-  const dirty = notes !== (note.notes ?? "") || date !== note.issue_date || showPrices !== note.show_prices;
+  const dirty = number.trim() !== note.number || notes !== (note.notes ?? "") || date !== note.issue_date || showPrices !== note.show_prices;
 
   const save = async () => {
     setSaving(true);
     try {
-      must(await supabase.from("delivery_notes").update({ notes: notes.trim() || null, issue_date: date, show_prices: showPrices }).eq("id", note.id));
+      must(await supabase.from("delivery_notes").update({ number: number.trim(), notes: notes.trim() || null, issue_date: date, show_prices: showPrices }).eq("id", note.id));
       toast.success("Bon enregistré.");
       void q.reload();
     } catch (err) { toast.error(errorMessage(err)); } finally { setSaving(false); }
@@ -220,6 +266,9 @@ export function NoteDetailPage() {
         <div className="space-y-4">
           <Card title="Réglages du bon">
             <div className="space-y-3 p-4">
+              <Field label="N° du bon" hint="Modifiable : saisissez votre propre numéro si besoin.">
+                <Input className="num" value={number} onChange={(e) => setNumber(e.target.value.toUpperCase())} />
+              </Field>
               <Field label="Date du bon"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
               <Checkbox
                 label="Afficher les prix et les totaux"
@@ -231,7 +280,7 @@ export function NoteDetailPage() {
                 <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </Field>
               <div className="flex justify-end">
-                <Button loading={saving} disabled={!dirty || !date} onClick={save}>Enregistrer</Button>
+                <Button loading={saving} disabled={!dirty || !date || !number.trim()} onClick={save}>Enregistrer</Button>
               </div>
             </div>
           </Card>
